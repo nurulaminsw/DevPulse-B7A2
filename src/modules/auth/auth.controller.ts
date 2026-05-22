@@ -8,15 +8,20 @@ const createUser = async (req: Request, res: Response) => {
     sendResponse(res, {
       statusCode: 201,
       success: true,
-      message: " User registered successfully",
+      message: "User registered successfully",
       data: result.rows[0],
     });
   } catch (error: any) {
     sendResponse(res, {
-      statusCode: 500,
+      statusCode: error.code === "23505"
+          ? 409
+          : 500,
       success: false,
-      message: " User registered failed",
-      error: error,
+      message:
+        error.code === "23505"
+          ? "Email already exists"
+          : "User registration failed",
+
     });
   }
 };
