@@ -3,7 +3,7 @@ import { pool } from "../../db";
 type CreateIssuePayload = {
   title: string;
   description: string;
-  type: "bug" | "feature";
+  type: "bug" | "feature_request";
   reporter_id: number;
 };
 
@@ -94,5 +94,38 @@ const getAllIssuesFromDB = async (query: {
 
   return data;
 };
- 
-export const issueService = { createIssueIntoDB, getAllIssuesFromDB, };
+
+const getSingleIssueFromDB = async (id: number) => {
+  const issueRes = await pool.query(
+    `SELECT id, title, description, type, status, reporter_id, created_at, updated_at
+     FROM issues
+     WHERE id = $1`,
+    [id],
+  );
+
+  const issue = issueRes.rows[0];
+  if (!issue) return null;
+
+  const reporterRes = await pool.query(
+    `SELECT id, name, role FROM users WHERE id = $1`,
+    [issue.reporter_id],
+  );
+
+  const reporter = reporterRes.rows[0] || null;
+  return {
+    id: issue.id,
+    title: issue.title,
+    description: issue.description,
+    type: issue.type,
+    status: issue.status,
+    reporter,
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+  };
+};
+
+export const issueService = {
+  createIssueIntoDB,
+  getAllIssuesFromDB,
+  getSingleIssueFromDB,
+};

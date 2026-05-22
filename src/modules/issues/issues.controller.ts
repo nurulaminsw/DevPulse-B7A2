@@ -7,7 +7,11 @@ const createIssue = async (req: Request, res: Response) => {
     const { title, description, type } = req.body;
 
     if (!req.user?.id) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      return sendResponse(res, {
+        statusCode: 401,
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
     const reporterId = req.user.id;
@@ -19,15 +23,18 @@ const createIssue = async (req: Request, res: Response) => {
       reporter_id: reporterId,
     });
 
-    return res.status(201).json({
+    return sendResponse(res, {
+      statusCode: 201,
       success: true,
       message: "Issue created successfully",
       data: issue,
     });
   } catch (err: any) {
-    return res.status(500).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
-      message: err?.message || "Something went wrong",
+      message: "Issue creation failed",
+      error: err.message,
     });
   }
 };
@@ -54,8 +61,45 @@ const getAllIssues = async (req: Request, res: Response) => {
     });
   }
 };
+const getSingleIssue = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
 
+    if (!id) {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "Invalid issue id",
+      });
+    }
+
+    const issue = await issueService.getSingleIssueFromDB(id);
+
+    if (!issue) {
+      return sendResponse(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue fetched successfully",
+      data: issue,
+    });
+  } catch (error) {
+    return sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: "Something went wrong",
+      error,
+    });
+  }
+};
 export const issuesController = {
   createIssue,
   getAllIssues,
+  getSingleIssue,
 };
