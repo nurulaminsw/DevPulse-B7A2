@@ -1,22 +1,47 @@
 import type { Request, Response } from "express";
+import sendResponse from "../../utils/sendResponse";
 import { authService } from "./auth.service";
 
 const createUser = async (req: Request, res: Response) => {
   try {
     const result = await authService.createUserIntoDB(req.body);
-    res.status(201).json({
+    sendResponse(res, {
+      statusCode: 201,
       success: true,
-      meassage: " User registered successfully",
+      message: " User registered successfully",
       data: result.rows[0],
     });
   } catch (error: any) {
-    res.status(500).json({
-      meassage: " User  can not Created",
-      error: error.detail,
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: " User registered failed",
+      error: error,
+    });
+  }
+};
+
+const loginUser = async (req: Request, res: Response) => {
+  try {
+    const result = await authService.loginUserIntoDB(req.body);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Login successful",
+      data: result,
+    });
+  } catch (error: any) {
+    sendResponse(res, {
+      statusCode: 401,
+      success: false,
+      message: "Credential Invalid",
+      error: error.message,
     });
   }
 };
 
 export const authController = {
   createUser,
+  loginUser,
 };
