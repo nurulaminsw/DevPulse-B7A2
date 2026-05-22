@@ -124,8 +124,111 @@ const getSingleIssueFromDB = async (id: number) => {
   };
 };
 
+const updateIssueInDB = async (
+  id: number,
+  userId: number,
+  userRole: string,
+  payload: {
+    title?: string;
+    description?: string;
+    type?: "bug" | "feature_request";
+    status?: "open" | "in_progress" | "resolved";
+  },
+) => {
+  const issueRes = await pool.query(`SELECT * FROM issues WHERE id = $1`, [id]);
+  const issue = issueRes.rows[0];
+
+  if (!issue) {
+    const error: any = new Error("Issue not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (userRole === "contributor") {
+    if (issue.reporter_id !== userId) {
+      const error: any = new Error(
+        "You do not have permission to update this issue",
+      );
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (issue.status !== "open") {
+      const error: any = new Error(
+        "You can only edit issues that are in 'open' status",
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    if (payload.status && payload.status !== issue.status) {
+      const error: any = new Error("Contributors cannot change issue status");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  const updates: string[] = [];
+  const values: any[] = [];
+  let index = 1;
+
+  if (payload.title) {
+    updates.push(`title = $${index++}`);
+    values.push(payload.title);
+  }
+  if (payload.description) {
+    updates.push(`description = $${index++}`);
+    values.push(payload.description);
+  }
+  if (payload.type) {
+    updates.push(`type = $${index++}`);
+    values.push(payload.type);
+  }
+  if (payload.status && userRole === "maintainer") {
+    updates.push(`status = $${index++}`);
+    values.push(payload.status);
+  }
+
+  if (updates.length === 0) {
+    return issue;
+  }
+
+  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+  values.push(id);
+
+  const query = `
+    UPDATE issues
+    SET ${updates.join(", ")}
+    WHERE id = $${index}
+    RETURNING id, title, description, type, status, reporter_id, created_at, updated_at
+  `;
+
+  const updatedRes = await pool.query(query, values);
+  return updatedRes.rows[0];
+};
+
+const deleteIssueFromDB = async (id: number) => {
+  
+  const result = await pool.query(
+    `DELETE FROM issues WHERE id = $1 RETURNING id`,
+    [id]
+  );
+
+ 
+  if (result.rowCount === 0) {
+    const error: any = new Error("Issue not found");
+    error.statusCode = 404; 
+    throw error;
+  }
+
+  return true;
+};
+
 export const issueService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
   getSingleIssueFromDB,
+  updateIssueInDB,
+  deleteIssueFromDB,
 };
