@@ -3,10 +3,17 @@ import express, {
   type Request,
   type Response,
 } from "express";
+
+import cors from "cors";
 import { authRouter } from "./modules/auth/auth.router";
 import { issuesRouter } from "./modules/issues/issues.router";
 
 const app: Application = express();
+app.use(
+  cors({
+    origin: "*",
+  }),
+);
 
 app.use(express.json());
 app.get("/", (req: Request, res: Response) => {
@@ -17,6 +24,6 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/issues" , issuesRouter);
+app.use("/api/issues", issuesRouter);
 
 export default app;
