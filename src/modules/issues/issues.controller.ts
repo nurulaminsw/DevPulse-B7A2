@@ -50,6 +50,7 @@ const getAllIssues = async (req: Request, res: Response) => {
     return sendResponse(res, {
       statusCode: 200,
       success: true,
+      message: "Issues retrived successfully",
       data,
     });
   } catch (error) {
@@ -86,7 +87,7 @@ const getSingleIssue = async (req: Request, res: Response) => {
     return sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Issue fetched successfully",
+      message: "Issue retrived successfully",
       data: issue,
     });
   } catch (error) {
@@ -168,7 +169,7 @@ const deleteIssue = async (req: Request, res: Response) => {
       statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to delete issue",
-      error: error.message, 
+      error: error.message,
     });
   }
 };
